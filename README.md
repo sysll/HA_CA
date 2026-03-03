@@ -38,9 +38,9 @@ These two values form a compact 2-dimensional descriptor that retains the most e
 
 The figure below illustrates the HV-Pooling operation:
 
-<<div align="center">
+<div align="center">
   <img src="hv_pooling.png" alt="HV-Pooling mechanism" width="400"/>
-  <p><em>Our horizontal and vertical pooling method operates on a feature map denoted as \( M \). The functions \( f_{1} \) and \( f_{2} \) serve as mappings that reduce the matrix to statistical quantities. Specifically, \( f_{1} \) extracts the maximum feature from each column, while \( f_{2} \) extracts the maximum feature from each row.</em></p>
+  <p><em>Our horizontal and vertical pooling method operates on a feature map denoted as <i>M</i>. The functions <i>f<sub>1</sub></i> and <i>f<sub>2</sub></i> serve as mappings that reduce the matrix to statistical quantities. Specifically, <i>f<sub>1</sub></i> extracts the maximum feature from each column, while <i>f<sub>2</sub></i> extracts the maximum feature from each row.</em></p>
 </div>
 
 ---

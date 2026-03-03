@@ -39,7 +39,7 @@ These two values form a compact 2-dimensional descriptor that retains the most e
 The figure below illustrates the HV-Pooling operation:
 
 <div align="center">
-  <img src="figures/hv_pooling.png" alt="HV-Pooling mechanism" width="600"/>
+  <img src="hv_pooling.png" alt="HV-Pooling mechanism" width="600"/>
   <p><em>Figure 2: For each channel, HV-Pooling extracts the maximum column sum (vertical) and maximum row sum (horizontal)</em></p>
 </div>
 

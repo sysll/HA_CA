@@ -3,7 +3,7 @@
 [![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![PyTorch 1.7](https://img.shields.io/badge/pytorch-1.7-orange.svg)](https://pytorch.org/get-started/previous-versions/)
 
-Official PyTorch implementation of **HV-CA: A Plug-and-Play Channel Attention Driven by Horizontal and Vertical Pooling for Convolutional Neural Networks** (Zhu et al.).  
+PyTorch implementation. 
 This repository contains the code for the HV-Pooling module and its integration into popular CNN architectures (ResNet, Inception, SwinUnet) for image classification and segmentation.
 
 ---

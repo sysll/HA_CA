@@ -62,58 +62,85 @@ Experiments were conducted on the following setup:
 
 Let \( U \in \mathbb{R}^{H \times W} \) denote a non-negative feature map output by a convolutional layer followed by ReLU activation. Define:
 
-- Maximum element: \( m = \max_{i,j} u_{ij} \);
-- Global Average Pooling: \( g = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} u_{ij} \);
-- Maximum column sum (induced \(L_1\) norm): \( c = \|U\|_1 = \max_{1 \leq j \leq W} \sum_{i=1}^{H} u_{ij} \);
-- Maximum row sum (induced \(L_\infty\) norm): \( r = \|U\|_\infty = \max_{1 \leq i \leq H} \sum_{j=1}^{W} u_{ij} \);
-- HV-Pooling output vector: \( \mathbf{z} = [c, r]^\top \), and its combined value can be defined as \( h = \frac{c + r}{2} \).
+- **Maximum element**: \( m = \max_{i,j} u_{ij} \)
+- **Global Average Pooling (GAP)**: \( g = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} u_{ij} \)
+- **Maximum column sum** (induced \(L_1\) norm): \( c = \|U\|_1 = \max_{1 \leq j \leq W} \sum_{i=1}^{H} u_{ij} \)
+- **Maximum row sum** (induced \(L_\infty\) norm): \( r = \|U\|_\infty = \max_{1 \leq i \leq H} \sum_{j=1}^{W} u_{ij} \)
+- **HV-Pooling output vector**: \( \mathbf{z} = [c, r]^\top \), and its combined value: \( h = \frac{c + r}{2} \)
+
+---
 
 ## Theorem 1: Intensity Preservation
 
 For any non-negative feature map \(U\), we have
+
 \[
 c \geq m,\quad r \geq m,
 \]
+
 and consequently \(h \geq m\). In contrast, the GAP output satisfies \(g \leq m\), and when the feature map is sparse, \(g\) can be much smaller than \(m\).
 
 ### Proof
 
 Let \((i^*, j^*)\) be the position of the maximum element, i.e., \(u_{i^*j^*} = m\). Consider the sum of the \(j^*\)-th column:
+
 \[
 \sum_{i=1}^{H} u_{i j^*} \geq u_{i^*j^*} = m,
 \]
+
 so this column sum is at least \(m\), hence \(c = \max_j \sum_i u_{ij} \geq m\). Similarly, the sum of the \(i^*\)-th row is at least \(m\), so \(r \geq m\). Therefore \(h \geq m\).
 
 On the other hand, by the inequality of arithmetic means,
+
 \[
 g = \frac{1}{HW} \sum_{i,j} u_{ij} \leq \frac{1}{HW} \sum_{i,j} m = m,
 \]
+
 with equality if and only if all elements are equal. When the feature map is sparse (i.e., most elements are zero), let \(k\) be the number of non-zero elements, and denote the proportion of non-zero elements as \(\rho = k/(HW) \ll 1\). If all non-zero elements equal \(m\), then
+
 \[
 g = \frac{k m}{HW} = \rho m \ll m,
 \]
-while the HV-Pooling output still satisfies \(h \geq m\). Thus, HV-Pooling preserves the intensity of the maximum element, whereas GAP dilutes it. ∎
+
+while the HV-Pooling output still satisfies \(h \geq m\). Thus, **HV-Pooling preserves the intensity of the maximum element**, whereas GAP dilutes it. ∎
+
+---
 
 ## Theorem 2: Spatial Location Sensitivity
 
-GAP is completely insensitive to spatial location transformations of the feature map, i.e., for any position transformation (element rearrangement) \(\pi\), we have \(g(\pi(U)) = g(U)\). In contrast, HV-Pooling is sensitive to spatial location transformations, meaning there exist transformations that change its output values. Therefore, it can reflect the spatial structure information of the feature map.
+GAP is completely insensitive to spatial location transformations of the feature map, i.e., for any position transformation (element rearrangement) \(\pi\), we have \(g(\pi(U)) = g(U)\). In contrast, **HV-Pooling is sensitive to spatial location transformations**, meaning there exist transformations that change its output values. Therefore, it can reflect the spatial structure information of the feature map.
 
 ### Proof
 
 The mathematical definition of GAP is:
+
 \[
 g(U) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} u_{ij}
 \]
+
 Since any position transformation \(\pi\) only changes the positions of elements without altering their values, the sum of all elements remains unchanged. Thus, \(g(\pi(U)) = g(U)\) holds for all \(\pi\).
 
 For HV-Pooling, the maximum column sum and maximum row sum are defined as:
+
 \[
 c(U) = \max_{j} \sum_{i} u_{ij}, \quad r(U) = \max_{i} \sum_{j} u_{ij}
 \]
 
 A position transformation \(\pi\) reassigns the elements of the original feature map to new rows and columns. After transformation, the row sums and column sums of the new feature map are composed of certain combinations of the original elements. Since the spatial distribution of elements changes, the row sum vector and column sum vector generally change accordingly.
 
-Consider a transformation \(\pi\) that concentrates important elements originally scattered across different rows into the same row, or disperses elements originally concentrated in one column across different columns. Such rearrangements alter the values of row sums and column sums, potentially causing \(\max_i \sum_j u_{ij}\) or \(\max_j \sum_i u_{ij}\) to change. Therefore, there exist position transformations such that \(c(\pi(U)) \neq c(U)\) or \(r(\pi(U)) \neq r(U)\).
+Consider a transformation \(\pi\) that:
+- Concentrates important elements originally scattered across different rows into the same row, or
+- Disperses elements originally concentrated in one column across different columns
 
-This demonstrates that the output of HV-Pooling depends on the spatial arrangement of elements, is sensitive to position transformations, and can reflect the spatial structure information of the feature map. ∎
+Such rearrangements alter the values of row sums and column sums, potentially causing \(\max_i \sum_j u_{ij}\) or \(\max_j \sum_i u_{ij}\) to change. Therefore, there exist position transformations such that \(c(\pi(U)) \neq c(U)\) or \(r(\pi(U)) \neq r(U)\).
 
+This demonstrates that **the output of HV-Pooling depends on the spatial arrangement of elements**, is sensitive to position transformations, and can reflect the spatial structure information of the feature map. ∎
+
+---
+
+## Summary
+
+| Property | GAP | HV-Pooling |
+|----------|-----|------------|
+| Intensity Preservation | ❌ Dilutes max value | ✅ Preserves max value |
+| Spatial Sensitivity | ❌ Invariant to rearrangement | ✅ Sensitive to structure |

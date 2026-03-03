@@ -1,5 +1,3 @@
-# HV-CA: Horizontal and Vertical Pooling Channel Attention
-
 [![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![PyTorch 1.7](https://img.shields.io/badge/pytorch-1.7-orange.svg)](https://pytorch.org/get-started/previous-versions/)
 

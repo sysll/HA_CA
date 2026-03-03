@@ -3,90 +3,58 @@
 [![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
 [![PyTorch 1.7](https://img.shields.io/badge/pytorch-1.7-orange.svg)](https://pytorch.org/get-started/previous-versions/)
 
-Official PyTorch implementation of **HV-CA: A Plug-and-Play Channel Attention Driven by Horizontal and Vertical Pooling for Convolutional Neural Networks** (Zhu et al.).
+Official PyTorch implementation of **HV-CA: A Plug-and-Play Channel Attention Driven by Horizontal and Vertical Pooling for Convolutional Neural Networks** (Zhu et al.).  
+This repository contains the code for the HV-Pooling module and its integration into popular CNN architectures (ResNet, Inception, SwinUnet) for image classification and segmentation.
 
-This repository contains the code for the HV-Pooling module and its integration into popular CNN architectures (ResNet, Inception, SwinUnet) for image classification and segmentation tasks.
+---
 
 ## 📖 Overview
 
-Channel attention mechanisms typically use **Global Average Pooling (GAP)** to squeeze spatial dimensions into a single statistic per channel. However, GAP discards spatial structure and dilutes salient information — especially in deep layers where feature maps are often sparse.
+Channel attention mechanisms typically use **global average pooling (GAP)** to squeeze feature maps into a single statistic. However, GAP discards spatial structure and dilutes salient information, especially in sparse feature maps common in deep CNNs.  
+**HV-CA** replaces GAP with **Horizontal and Vertical Pooling (HV-Pooling)**, which extracts the most significant row and column features using induced matrix norms. This preserves both magnitude and positional cues, leading to more accurate channel weights.
 
-**HV-CA** replaces GAP with **Horizontal and Vertical Pooling (HV-Pooling)**, which captures the most significant row-wise and column-wise features using induced matrix norms. This preserves both **magnitude** and **positional cues**, resulting in more discriminative channel weights.
+### 🔬 Method: Horizontal and Vertical Pooling (HV-Pooling)
 
-## 🔬 HV-Pooling Method
+For a feature map $U \in \mathbb{R}^{H \times W}$, the traditional global average pooling will map it into a statistic $z$:
 
-For an input feature map $U \in \mathbb{R}^{H \times W}$ (per channel), traditional global average pooling computes:
+$$z = \frac{1}{H \times W} \sum_{i=1}^{H} \sum_{j=1}^{W} u_{ij}$$
 
-$$
-z = \frac{1}{H \times W} \sum_{i=1}^{H} \sum_{j=1}^{W} u_{ij}
-$$
+Here, $u_{ij}$ represents the element in the $i$-th row and $j$-th column. We argue that features obtained through global average pooling struggle to fully capture the significance of a feature map. First, global average pooling lacks positional awareness. Each element $u_{ij}$ contributes equally to the computed statistic $z$, disregarding spatial importance. In contrast, max pooling considers only the most dominant element, preserving its location. Additionally, feature maps are often sparse matrices, meaning most elements $u_{ij}$ are zero. As a result, only a small subset of elements significantly contribute to $z$, while the scaling factor $\frac{1}{H \times W}$ further suppresses these values, weakening their impact.
 
-This treats every spatial location equally and is sensitive to sparsity.
+To address these limitations, we propose **Horizontal and Vertical Pooling (HV-Pooling)** as an alternative to global average pooling. This method enhances the model's ability to capture deep feature information. The pooling formulation is summarized as follows:
 
-We propose **Horizontal and Vertical Pooling (HV-Pooling)** instead:
+$$\left[\begin{array}{c} z_1 \\ z_2 \end{array}\right] = \left[\begin{array}{c} \|U\|_1 \\ \|U\|_\infty \end{array}\right] = \left[\begin{array}{c} \max_j \sum_i |u_{ij}| \\ \max_i \sum_j |u_{ij}| \end{array}\right]$$
 
-$$
-\begin{bmatrix}
-z_1 \\
-z_2
-\end{bmatrix}
-=
-\begin{bmatrix}
-\max_j \sum_i u_{ij} \\
-\max_i \sum_j u_{ij}
-\end{bmatrix}
-$$
+We obtain a statistical vector $\mathbf{z} \in \mathbb{R}^2$, where the first element represents the maximum row feature of the corresponding matrix, and the second element represents the maximum column feature of the corresponding matrix. Therefore, the resulting statistical vector preserves important information and includes positional details.
 
-(where $u_{ij} \geq 0$ after ReLU)
+Due to the nature of the ReLU activation function, all elements in the feature maps are non-negative. Therefore, the absolute value operation in the L₁ norm becomes redundant, i.e., $|u_{ij}| = u_{ij}$. This simplification eliminates the need for absolute value calculations, although the $\max$ operation remains sub-differentiable. In practice, subgradients can be used during backpropagation, making the overall pooling operation effectively differentiable. We can simplify the operation as:
 
-- $z_1$ : maximum column sum — strongest **vertical** strip  
-- $z_2$ : maximum row sum — strongest **horizontal** strip  
+$$\left[\begin{array}{c} \max_j \sum_i |u_{ij}| \\ \max_i \sum_j |u_{ij}| \end{array}\right] = \left[\begin{array}{c} \max_j \sum_i u_{ij} \\ \max_i \sum_j u_{ij} \end{array}\right]$$
 
-This produces a compact 2-D descriptor per channel that is both **intensity-aware** and **spatially sensitive**.
+- $z_1$ : **maximum column sum** – captures the strongest vertical strip (induced $L_1$ norm)
+- $z_2$ : **maximum row sum** – captures the strongest horizontal strip (induced $L_\infty$ norm)
+
+These two values form a compact 2-dimensional descriptor that retains the most energetic rows and columns, preserving both **intensity** and **spatial sensitivity**.
+
+The figure below illustrates the HV-Pooling operation:
 
 <div align="center">
-  <img src="hv_pooling.png" alt="HV-Pooling mechanism" width="600"/>
-  <br>
-  <em>Figure: HV-Pooling extracts the max column sum (vertical direction) and max row sum (horizontal direction) for each channel.</em>
+  <img src="figures/hv_pooling.png" alt="HV-Pooling mechanism" width="600"/>
+  <p><em>Figure 2: For each channel, HV-Pooling extracts the maximum column sum (vertical) and maximum row sum (horizontal)</em></p>
 </div>
 
-## 🛠️ Implementation
+---
 
-### HV-Pooling Core Function
+## 🛠️ Environment & Requirements
 
-```python
-import torch
-import torch.nn as nn
+Experiments were conducted on the following setup:
 
-def Level_vertical_pooling(x):
-    """
-    Your implementation variant:
-    L_inf → max column sum (vertical strongest)
-    L1   → max row sum    (horizontal strongest)
-    """
-    # Note: abs() is optional after ReLU
-    L_inf = torch.max(torch.sum(torch.abs(x), dim=3), dim=2).values.unsqueeze(2)
-    L1    = torch.max(torch.sum(torch.abs(x), dim=2), dim=2).values.unsqueeze(2)
-    
-    feature_cat_vec = torch.cat((L_inf, L1), dim=2).flatten(1)   # (B, 2C)
-    return feature_cat_vec
+| Component | Specification |
+|-----------|---------------|
+| **OS** | Ubuntu 18.04 |
+| **GPU** | NVIDIA GeForce RTX 3090 (24GB VRAM) |
+| **CUDA** | 11.0 (compatible with PyTorch 1.7) |
+| **Python** | 3.8 |
+| **PyTorch** | 1.7 |
 
-class LVP_ChannelAttention(nn.Module):
-    def __init__(self, in_planes):
-        super(LVP_ChannelAttention, self).__init__()
-        self.LVP = Level_vertical_pooling
-        
-        self.fc1   = nn.Linear(2 * in_planes, int(1.5 * in_planes))
-        self.relu1 = nn.Mish()
-        self.fc2   = nn.Linear(int(1.5 * in_planes), in_planes)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        tmp = x
-        x = self.LVP(x)                     # (B, 2 * in_planes)
-        x = self.fc1(x)
-        x = self.relu1(x)
-        x = self.fc2(x)                     # (B, in_planes)
-        x = x.unsqueeze(2).unsqueeze(3)     # (B, C, 1, 1)
-        x = self.sigmoid(x) * tmp
-        return x
+---
